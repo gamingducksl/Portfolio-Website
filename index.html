@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Portfolio</title>
+<link rel="icon" type="image/x-icon" href="/favicon/favicon.ico" />
+<style>
+  body {
+    background-color: #1c1a22;
+    margin: 0;
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 20px;
+    padding: 40px;
+    max-width: 2000px;
+    width: 100%;
+  }
+
+  .image-container {
+    background-color: #444;
+    background-image:
+      linear-gradient(45deg, #333 25%, transparent 25%),
+      linear-gradient(-45deg, #333 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #333 75%),
+      linear-gradient(-45deg, transparent 75%, #333 75%);
+    background-size: 40px 40px;
+    background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    aspect-ratio: 1 / 1; /* Default square */
+  }
+
+  .image-container.landscape {
+    grid-column: span 2;
+    aspect-ratio: 16 / 9;
+  }
+
+  .image-container.no-background {
+    background: none;
+  }
+
+  .image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.7s ease;
+  }
+
+  .image-container:hover img {
+    transform: scale(1.03);
+  }
+
+  .image-wrapper::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("watermark.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 50% auto;
+    opacity: 0.25;
+    pointer-events: none;
+  }
+
+  /* Spinner with fade */
+  .spinner {
+    position: fixed;
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 50px;
+    border: 6px solid rgba(255, 165, 0, 0.3);
+    border-top-color: orange;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 9999;
+
+    /* Fade properties */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+
+  @keyframes spin {
+    to {
+      transform: translateX(-50%) rotate(360deg);
+    }
+  }
+
+  /* Back to top button */
+  #backToTop {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: orange;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    display: none;
+    z-index: 10000;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: background 0.2s ease;
+  }
+
+  #backToTop:hover {
+    background: #e69500;
+  }
+
+  /* Lightbox styles */
+  #lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    cursor: zoom-out;
+    z-index: 100000;
+  }
+
+  #lightbox img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 10px;
+    box-shadow: 0 0 0spx orange;
+  }
+
+  /* Toast for right-click message */
+  #toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 165, 0, 0.9);
+    color: #1c1a22;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 100001;
+  }
+</style>
+</head>
+<body>
+  <div class="grid" id="grid"></div>
+
+  <!-- Spinner -->
+  <div class="spinner" id="spinner"></div>
+
+  <!-- Back to top button -->
+  <button id="backToTop">↑ Top</button>
+
+  <!-- Lightbox -->
+  <div id="lightbox"><img id="lightbox-img" src="" alt="Expanded view" /></div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script>
+    const images = [
+      "Images/mouserender1.png",
+      "Images/turretrender1.png",
+      "Images/turretrender2.png",
+      "Images/dboiaccendrender1finished1watermarked1.png",
+      "Images/1920x1080scp939bannerrender1finishedNOWATERMARK.png",
+      "Images/chaosarmoredrender1finished3NOWATERMARK1.png",
+      "Images/chaosarmoredrender1finished2NOWATERMARK1.png",
+      "Images/mtfvschaosrender2finished1NOWATERMARK.png",
+      "Images/mtfvschaosrender1finished1NOWATERMARK.png",
+      "Images/ScientistRender1NOWATERMARK.png",
+      "Images/CIRender2.png",
+      "Images/pfpnew.png",
+      "Images/CIRender1View1NOWATERMARK.png",
+      "Images/CIRendr1View2NOWATERMARK.png",
+    ];
+
+    const transparentImages = [
+      "Images/mouserender1.png",
+      "Images/turretrender1.png",
+      "Images/turretrender2.png",
+      // Add more known transparent PNGs here
+    ];
+
+    const grid = document.getElementById("grid");
+    const spinner = document.getElementById("spinner");
+    const backToTopBtn = document.getElementById("backToTop");
+    const lightbox = document.getElementById("lightbox");
+    const lightboxImg = document.getElementById("lightbox-img");
+    const toast = document.getElementById("toast");
+
+    let loadedCount = 0;
+    const batchSize = 3;
+    let isLoading = false;
+
+    function showSpinner() {
+      spinner.style.opacity = "1";
+      spinner.style.pointerEvents = "auto";
+    }
+
+    function hideSpinner() {
+      spinner.style.opacity = "0";
+      spinner.style.pointerEvents = "none";
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.style.opacity = "1";
+      toast.style.pointerEvents = "auto";
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.pointerEvents = "none";
+      }, 1500);
+    }
+
+    function loadNextBatch() {
+      if (isLoading) return;
+      isLoading = true;
+      showSpinner();
+
+      setTimeout(() => {
+        const end = Math.min(loadedCount + batchSize, images.length);
+        for (let i = loadedCount; i < end; i++) {
+          const src = images[i];
+          const container = document.createElement("div");
+          container.className = "image-container";
+
+          const wrapper = document.createElement("div");
+          wrapper.className = "image-wrapper";
+
+          const img = document.createElement("img");
+          img.src = src;
+          img.alt = "Portfolio image";
+          img.onerror = () => {
+            img.src = "placeholder.png";
+          };
+
+          img.onload = () => {
+            const isLandscape = img.naturalWidth > img.naturalHeight * 1.1;
+            if (isLandscape) container.classList.add("landscape");
+
+            if (!transparentImages.includes(src)) {
+              container.classList.add("no-background");
+            }
+          };
+
+          img.addEventListener("click", () => {
+            lightboxImg.src = src;
+            lightbox.style.display = "flex";
+          });
+
+          wrapper.appendChild(img);
+          container.appendChild(wrapper);
+          grid.appendChild(container);
+        }
+        loadedCount = end;
+        hideSpinner();
+        isLoading = false;
+      }, 300);
+    }
+
+    function checkAndLoadMore() {
+      if (
+        window.innerHeight + window.scrollY >=
+          document.body.offsetHeight - 100 &&
+        loadedCount < images.length
+      ) {
+        loadNextBatch();
+      }
+    }
+
+    window.addEventListener("scroll", () => {
+      backToTopBtn.style.display = window.scrollY > 200 ? "block" : "none";
+      checkAndLoadMore();
+    });
+
+    backToTopBtn.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    setInterval(checkAndLoadMore, 500);
+
+    lightbox.addEventListener("click", () => {
+      lightbox.style.display = "none";
+      lightboxImg.src = "";
+    });
+
+    // Disable right-click with toast
+    document.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      showToast("Right-click is disabled");
+    });
+
+    document.addEventListener("copy", (e) => e.preventDefault());
+
+    loadNextBatch();
+  </script>
+</body>
+</html>
